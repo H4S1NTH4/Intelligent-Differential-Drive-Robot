@@ -45,9 +45,10 @@ class DifferentialDriveRobot:
         self.prev_alpha_error = 0.0
         self.integral_alpha = 0.0
     
-    def update(self, target_x, target_y, dt, controller_type='PID'):
+    def update(self, target_x, target_y, dt, controller_type='PD'):
         """
         Calculates errors, applies the selected control law, and updates the robot's pose.
+        Returns the distance to the target (rho).
         """
         # 1. Calculate Error Terms
         dx = target_x - self.x
@@ -105,6 +106,8 @@ class DifferentialDriveRobot:
         self.y += v * math.sin(self.theta) * dt
         self.theta += omega * dt
         self.theta = (self.theta + math.pi) % (2 * math.pi) - math.pi
+        
+        return rho
 
     def draw(self, screen):
         """
@@ -149,6 +152,7 @@ def main():
     pygame.display.set_caption("Differential Drive Robot Simulation")
     clock = pygame.time.Clock()
     font = pygame.font.SysFont(None, 20)
+    timer_font = pygame.font.SysFont(None, 36)
 
     # Create the robot
     # Starting at (100, 400) with a heading of -PI/2 (facing up)
@@ -165,6 +169,8 @@ def main():
 
     running = True
     last_time = time.time()
+    start_time = time.time()
+    time_to_target = None
     
     while running:
         for event in pygame.event.get():
@@ -176,11 +182,15 @@ def main():
         dt = current_time - last_time
         last_time = current_time
         
-        # Update the robot's state
-        robot.update(target_x, target_y, dt, active_controller)
+        # Update the robot's state and get distance to target
+        rho = robot.update(target_x, target_y, dt, active_controller)
         
         # Store current position for the trajectory
         trajectory.append((robot.x, robot.y))
+
+        # Check if target is reached
+        if rho <= 5.0 and time_to_target is None:
+            time_to_target = current_time - start_time
 
         # --- Drawing ---
         screen.fill(BLACK) # Clear screen
@@ -197,6 +207,16 @@ def main():
         
         # Draw robot
         robot.draw(screen)
+
+        # --- Timer Display ---
+        if time_to_target is not None:
+            timer_text = f"Time: {time_to_target:.2f}s"
+        else:
+            elapsed_time = current_time - start_time
+            timer_text = f"Time: {elapsed_time:.2f}s"
+        
+        timer_surface = timer_font.render(timer_text, True, WHITE)
+        screen.blit(timer_surface, (SCREEN_WIDTH - 150, 20))
 
         pygame.display.flip() # Update the display
         clock.tick(60) # Limit frame rate to 60 FPS
