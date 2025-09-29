@@ -105,58 +105,6 @@ class DifferentialDriveRobot:
         self.y += v * math.sin(self.theta) * dt
         self.theta += omega * dt
         self.theta = (self.theta + math.pi) % (2 * math.pi) - math.pi
-        """
-        Calculates errors, applies the selected control law, and updates the robot's pose.
-        """
-        # 1. Calculate Error Terms
-        dx = target_x - self.x
-        dy = target_y - self.y
-        
-        rho = math.sqrt(dx**2 + dy**2)
-        theta_target = math.atan2(dy, dx)
-        alpha = theta_target - self.theta
-        alpha = (alpha + math.pi) % (2 * math.pi) - math.pi
-
-        # Initialize velocities
-        v = 0.0 # Linear velocity
-        omega = 0.0 # Angular velocity
-
-        # 2. Check stopping condition BEFORE calculating velocities
-        if rho > 5.0: # Only calculate new velocities if we are not at the target
-            # --- Apply Control Laws ---
-            if controller_type == 'P':
-                v = self.Kp_linear * rho
-                omega = self.Kp_angular * alpha
-
-            elif controller_type == 'PD':
-                rho_derivative = (rho - self.prev_rho_error) / dt
-                v = self.Kp_linear * rho + self.Kd_linear * rho_derivative
-                omega = self.Kp_angular * alpha
-
-            elif controller_type == 'PID':
-                rho_derivative = (rho - self.prev_rho_error) / dt
-                v = self.Kp_linear * rho + self.Kd_linear * rho_derivative
-                
-                self.integral_alpha += alpha * dt
-                self.integral_alpha = max(min(self.integral_alpha, 2.0), -2.0)
-                alpha_derivative = (alpha - self.prev_alpha_error) / dt
-                
-                omega = (self.Kp_angular * alpha + 
-                         self.Ki_angular * self.integral_alpha + 
-                         self.Kd_angular * alpha_derivative)
-        else:
-            # Target reached, reset PID accumulators
-            self.integral_alpha = 0.0
-
-        # Store errors for the next iteration's derivative calculation
-        self.prev_rho_error = rho
-        self.prev_alpha_error = alpha
-
-        # 3. Update Robot's Pose (Kinematic Model) - This now runs every time
-        self.x += v * math.cos(self.theta) * dt
-        self.y += v * math.sin(self.theta) * dt
-        self.theta += omega * dt
-        self.theta = (self.theta + math.pi) % (2 * math.pi) - math.pi
 
     def draw(self, screen):
         """
@@ -171,15 +119,39 @@ class DifferentialDriveRobot:
         pygame.draw.line(screen, WHITE, (int(self.x), int(self.y)), (int(end_x), int(end_y)), 2)
 
 
+def draw_cartesian_plane(screen, font, grid_spacing=50):
+    """
+    Draws a cartesian plane with grid lines and labels.
+    """
+    grid_color = (80, 80, 80)
+    # Vertical lines
+    for x in range(0, SCREEN_WIDTH, grid_spacing):
+        pygame.draw.line(screen, grid_color, (x, 0), (x, SCREEN_HEIGHT))
+        if x > 0:
+            label = font.render(str(x), True, WHITE)
+            screen.blit(label, (x + 5, 5))
+    # Horizontal lines
+    for y in range(0, SCREEN_HEIGHT, grid_spacing):
+        pygame.draw.line(screen, grid_color, (0, y), (SCREEN_WIDTH, y))
+        if y > 0:
+            label = font.render(str(y), True, WHITE)
+            screen.blit(label, (5, y + 5))
+
+    # Axes
+    pygame.draw.line(screen, WHITE, (0, 0), (SCREEN_WIDTH, 0), 2) # X-axis
+    pygame.draw.line(screen, WHITE, (0, 0), (0, SCREEN_HEIGHT), 2) # Y-axis
+
+
 # --- Main Simulation Loop ---
 def main():
     pygame.init()
     screen = pygame.display.set_mode((SCREEN_WIDTH, SCREEN_HEIGHT))
     pygame.display.set_caption("Differential Drive Robot Simulation")
     clock = pygame.time.Clock()
+    font = pygame.font.SysFont(None, 20)
 
     # Create the robot
-    # Starting at (100, 500) with a heading of -PI/2 (facing up)
+    # Starting at (100, 400) with a heading of -PI/2 (facing up)
     robot = DifferentialDriveRobot(100, 400, -math.pi / 2)
     
     # Define the target position 
@@ -212,6 +184,9 @@ def main():
 
         # --- Drawing ---
         screen.fill(BLACK) # Clear screen
+
+        # Draw cartesian plane
+        draw_cartesian_plane(screen, font)
 
         # Draw trajectory 
         if len(trajectory) > 1:
