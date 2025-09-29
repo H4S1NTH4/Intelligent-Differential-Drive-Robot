@@ -4,8 +4,8 @@ import time
 
 # --- Constants ---
 # Screen dimensions
-SCREEN_WIDTH = 1268
-SCREEN_HEIGHT = 1020
+SCREEN_WIDTH = 720
+SCREEN_HEIGHT = 480
 
 # Colors
 WHITE = (255, 255, 255)
@@ -31,7 +31,7 @@ class DifferentialDriveRobot:
         # --- Controller Gains (These are the values you will tune!) ---
         # Part 1: P Controller
         self.Kp_linear = 0.25   # Proportional gain for linear velocity
-        self.Kp_angular = 5  # Proportional gain for angular velocity
+        self.Kp_angular = 0.5  # Proportional gain for angular velocity
 
         # Part 3: PD Controller for distance
         self.Kd_linear = 5.0    # Derivative gain for linear velocity
@@ -180,10 +180,10 @@ def main():
 
     # Create the robot
     # Starting at (100, 500) with a heading of -PI/2 (facing up)
-    robot = DifferentialDriveRobot(100, 800, -math.pi / 2)
+    robot = DifferentialDriveRobot(100, 400, -math.pi / 2)
     
     # Define the target position 
-    target_x, target_y = 800, 300
+    target_x, target_y = 550, 200
     
     # Store the robot's path for trajectory visualization 
     trajectory = []
