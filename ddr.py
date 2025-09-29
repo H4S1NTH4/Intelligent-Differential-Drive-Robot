@@ -4,8 +4,8 @@ import time
 
 # --- Constants ---
 # Screen dimensions
-SCREEN_WIDTH = 720
-SCREEN_HEIGHT = 480
+SCREEN_WIDTH = 1080
+SCREEN_HEIGHT = 600
 
 # Colors
 WHITE = (255, 255, 255)
@@ -30,11 +30,12 @@ class DifferentialDriveRobot:
 
         # --- Controller Gains (These are the values you will tune!) ---
         # Part 1: P Controller
-        self.Kp_linear = 0.25   # Proportional gain for linear velocity
-        self.Kp_angular = 0.5  # Proportional gain for angular velocity
+
+        self.Kp_linear = 0.6   # Proportional gain for linear velocity
+        self.Kp_angular = 0.7 # Proportional gain for angular velocity
 
         # Part 3: PD Controller for distance
-        self.Kd_linear = 5.0    # Derivative gain for linear velocity
+        self.Kd_linear = 1    # Derivative gain for linear velocity
 
         # Part 4: PID Controller for heading
         self.Ki_angular = 0.01  # Integral gain for angular velocity
@@ -45,11 +46,12 @@ class DifferentialDriveRobot:
         self.prev_alpha_error = 0.0
         self.integral_alpha = 0.0
     
-    def update(self, target_x, target_y, dt, controller_type='PD'):
+    def update(self, target_x, target_y, dt, controller_type='P'):
         """
         Calculates errors, applies the selected control law, and updates the robot's pose.
         Returns the distance to the target (rho).
         """
+        
         # 1. Calculate Error Terms
         dx = target_x - self.x
         dy = target_y - self.y
@@ -156,16 +158,16 @@ def main():
 
     # Create the robot
     # Starting at (100, 400) with a heading of -PI/2 (facing up)
-    robot = DifferentialDriveRobot(100, 400, -math.pi / 2)
+    robot = DifferentialDriveRobot(150, 450, -math.pi / 2)
     
     # Define the target position 
-    target_x, target_y = 550, 200
+    target_x, target_y = 700, 300
     
     # Store the robot's path for trajectory visualization 
     trajectory = []
 
     # Choose your controller: 'P', 'PD', or 'PID'
-    active_controller = 'P' # <-- CHANGE THIS TO TEST DIFFERENT CONTROLLERS
+    active_controller = 'PD' # <-- CHANGE THIS TO TEST DIFFERENT CONTROLLERS
 
     running = True
     last_time = time.time()
