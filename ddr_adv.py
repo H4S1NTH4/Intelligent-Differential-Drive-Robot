@@ -30,15 +30,16 @@ class DifferentialDriveRobot:
 
         # --- Controller Gains (These are the values you will tune!) ---
         # Part 1: P Controller
+        self.Kp_linear = 1.2   # Proportional gain for linear velocity
+        self.Kp_angular = 0.75 # Proportional gain for angular velocity
 
-        self.Kp_linear = 0.3   # Proportional gain for linear velocity
-        self.Kp_angular = 0.4 # Proportional gain for angular velocity
+        # Part 2: PI Controller
+        self.Ki_angular = 0.01  # Integral gain for angular velocity
 
-        # Part 3: PD Controller for distance
+        # Part 3: PD Controller
         self.Kd_linear = 1    # Derivative gain for linear velocity
 
-        # Part 4: PID Controller for heading
-        self.Ki_angular = 0.01  # Integral gain for angular velocity
+        # Part 4: PID Controller
         self.Kd_angular = 0.5   # Derivative gain for angular velocity
         
         # --- Variables for PD/PID control ---
@@ -51,14 +52,11 @@ class DifferentialDriveRobot:
         Calculates errors, applies the selected control law, and updates the robot's pose.
         Returns the distance to the target (rho).
         """
-
-        """
         # ---!!!--- ROBUST dt and VELOCITY CLAMPING ---!!!---
         # Prevent division by a tiny dt on the first frame and limit max velocity
         dt = max(min(dt, 0.1), 0.001) # Clamp dt to a reasonable range
         MAX_V = 100.0  # Max linear velocity (pixels per second)
         MAX_OMEGA = 3.0 # Max angular velocity (radians per second)
-        """
 
         # 1. Calculate Error Terms
         dx = target_x - self.x
@@ -84,6 +82,15 @@ class DifferentialDriveRobot:
                 v = self.Kp_linear * rho + self.Kd_linear * rho_derivative
                 omega = self.Kp_angular * alpha
 
+            elif controller_type == 'PI':
+                v = self.Kp_linear * rho
+                
+                self.integral_alpha += alpha * dt
+                self.integral_alpha = max(min(self.integral_alpha, 2.0), -2.0)
+                
+                omega = (self.Kp_angular * alpha + 
+                         self.Ki_angular * self.integral_alpha)
+
             elif controller_type == 'PID':
                 rho_derivative = (rho - self.prev_rho_error) / dt
                 v = self.Kp_linear * rho + self.Kd_linear * rho_derivative
@@ -98,12 +105,10 @@ class DifferentialDriveRobot:
         else:
             self.integral_alpha = 0.0
 
-        """
         # Clamp the final velocities to their maximums
         v = max(min(v, MAX_V), -MAX_V)
         omega = max(min(omega, MAX_OMEGA), -MAX_OMEGA)
-        """
-        
+
         # Store errors for the next iteration's derivative calculation
         self.prev_rho_error = rho
         self.prev_alpha_error = alpha
@@ -167,13 +172,13 @@ def main():
     robot = DifferentialDriveRobot(200, 450, -math.pi / 2)
     
     # Define the target position 
-    target_x, target_y = 700, 200
+    target_x, target_y = 1000, 200
     
     # Store the robot's path for trajectory visualization 
     trajectory = []
 
-    # Choose your controller: 'P', 'PD', or 'PID'
-    active_controller = 'PD' # <-- CHANGE THIS TO TEST DIFFERENT CONTROLLERS
+    # Choose your controller: 'P', 'PD', 'PI', or 'PID'
+    active_controller = 'PID' # <-- CHANGE THIS TO TEST DIFFERENT CONTROLLERS
 
     running = True
     last_time = time.time()

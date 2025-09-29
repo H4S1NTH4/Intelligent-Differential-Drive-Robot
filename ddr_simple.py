@@ -31,8 +31,8 @@ class DifferentialDriveRobot:
         # --- Controller Gains (These are the values you will tune!) ---
         # Part 1: P Controller
 
-        self.Kp_linear = 0.3   # Proportional gain for linear velocity
-        self.Kp_angular = 0.4 # Proportional gain for angular velocity
+        self.Kp_linear = 99   # Proportional gain for linear velocity
+        self.Kp_angular = 0.75 # Proportional gain for angular velocity
 
         # Part 3: PD Controller for distance
         self.Kd_linear = 1    # Derivative gain for linear velocity
@@ -51,14 +51,11 @@ class DifferentialDriveRobot:
         Calculates errors, applies the selected control law, and updates the robot's pose.
         Returns the distance to the target (rho).
         """
-
-        """
         # ---!!!--- ROBUST dt and VELOCITY CLAMPING ---!!!---
         # Prevent division by a tiny dt on the first frame and limit max velocity
         dt = max(min(dt, 0.1), 0.001) # Clamp dt to a reasonable range
         MAX_V = 100.0  # Max linear velocity (pixels per second)
         MAX_OMEGA = 3.0 # Max angular velocity (radians per second)
-        """
 
         # 1. Calculate Error Terms
         dx = target_x - self.x
@@ -98,12 +95,10 @@ class DifferentialDriveRobot:
         else:
             self.integral_alpha = 0.0
 
-        """
         # Clamp the final velocities to their maximums
         v = max(min(v, MAX_V), -MAX_V)
         omega = max(min(omega, MAX_OMEGA), -MAX_OMEGA)
-        """
-        
+
         # Store errors for the next iteration's derivative calculation
         self.prev_rho_error = rho
         self.prev_alpha_error = alpha
@@ -167,13 +162,13 @@ def main():
     robot = DifferentialDriveRobot(200, 450, -math.pi / 2)
     
     # Define the target position 
-    target_x, target_y = 700, 200
+    target_x, target_y = 900, 450
     
     # Store the robot's path for trajectory visualization 
     trajectory = []
 
     # Choose your controller: 'P', 'PD', or 'PID'
-    active_controller = 'PD' # <-- CHANGE THIS TO TEST DIFFERENT CONTROLLERS
+    active_controller = 'P' # <-- CHANGE THIS TO TEST DIFFERENT CONTROLLERS
 
     running = True
     last_time = time.time()
@@ -204,7 +199,7 @@ def main():
         screen.fill(BLACK) # Clear screen
 
         # Draw cartesian plane
-        draw_cartesian_plane(screen, font)
+        #draw_cartesian_plane(screen, font)
 
         # Draw trajectory 
         if len(trajectory) > 1:
@@ -217,14 +212,14 @@ def main():
         robot.draw(screen)
 
         # --- Timer Display ---
-        if time_to_target is not None:
-            timer_text = f"Time: {time_to_target:.2f}s"
-        else:
-            elapsed_time = current_time - start_time
-            timer_text = f"Time: {elapsed_time:.2f}s"
+        # if time_to_target is not None:
+        #     timer_text = f"Time: {time_to_target:.2f}s"
+        # else:
+        #     elapsed_time = current_time - start_time
+        #     timer_text = f"Time: {elapsed_time:.2f}s"
         
-        timer_surface = timer_font.render(timer_text, True, WHITE)
-        screen.blit(timer_surface, (SCREEN_WIDTH - 150, 20))
+        # timer_surface = timer_font.render(timer_text, True, WHITE)
+        # screen.blit(timer_surface, (SCREEN_WIDTH - 150, 20))
 
         pygame.display.flip() # Update the display
         clock.tick(60) # Limit frame rate to 60 FPS
