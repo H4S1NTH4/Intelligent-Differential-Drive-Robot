@@ -31,7 +31,7 @@ class DifferentialDriveRobot:
         # --- Controller Gains (These are the values you will tune!) ---
         # Part 1: P Controller
 
-        self.Kp_linear = 99   # Proportional gain for linear velocity
+        self.Kp_linear = 1   # Proportional gain for linear velocity
         self.Kp_angular = 0.75 # Proportional gain for angular velocity
 
         # Part 3: PD Controller for distance

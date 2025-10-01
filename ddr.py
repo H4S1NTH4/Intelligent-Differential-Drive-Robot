@@ -35,12 +35,12 @@ class DifferentialDriveRobot:
 
         # --- Controller Gains (These are the values you will tune!) ---
         
-        self.Kp_linear = 0.6  # Proportional gain for linear velocity
-        self.Kp_angular = 0.6    # Proportional gain for angular velocity
+        self.Kp_linear = 0.2  # Proportional gain for linear velocity
+        self.Kp_angular = 4    # Proportional gain for angular velocity
 
         self.Ki_angular = 0.02  # Integral gain for angular velocity
 
-        self.Kd_linear = 0.1     # Derivative gain for linear velocity
+        self.Kd_linear = 0.5     # Derivative gain for linear velocity
         self.Kd_angular = 8    # Derivative gain for angular velocity
         
         # --- Variables for control and display ---
@@ -58,6 +58,7 @@ class DifferentialDriveRobot:
         self.prev_alpha_error = 0.0
         self.integral_alpha = 0.0
         self.alpha = 0.0
+        self.prev_theta = self.initial_theta
 
     def update(self, target_x, target_y, dt, controller_type='P'):
         """
@@ -102,18 +103,22 @@ class DifferentialDriveRobot:
             v = self.Kp_linear * rho + self.Kd_linear * rho_derivative
             self.integral_alpha += alpha * dt
             self.integral_alpha = max(min(self.integral_alpha, 2.0), -2.0)
-            alpha_derivative = (alpha - self.prev_alpha_error) / dt
+            #alpha_derivative = (alpha - self.prev_alpha_error) / dt
+            alpha_derivative = (self.theta - self.prev_theta) / dt            
             omega = (self.Kp_angular * alpha + 
             self.Ki_angular * self.integral_alpha + 
             self.Kd_angular * alpha_derivative)
 
-        self.integral_alpha = 0.0
+        if rho <= 1.0:
+            self.integral_alpha = 0.0
+        
 
         # v = max(min(v, MAX_V), -MAX_V)                   # <--- MODIFIED: Safety limit removed
         # omega = max(min(omega, MAX_OMEGA), -MAX_OMEGA)   # <--- MODIFIED: Safety limit removed
 
         self.prev_rho_error = rho
         self.prev_alpha_error = alpha
+        self.prev_theta = self.theta
 
         # 3. Update Robot's Pose
         self.x += v * math.cos(self.theta) * dt

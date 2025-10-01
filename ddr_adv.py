@@ -161,7 +161,7 @@ def main():
 
     # --- Initial State ---
     initial_robot_pos = (200, 450, -math.pi / 2)
-    initial_target_pos = (550, 350)
+    initial_target_pos = (800, 200)
 
     robot = DifferentialDriveRobot(*initial_robot_pos)
     target_x, target_y = initial_target_pos
