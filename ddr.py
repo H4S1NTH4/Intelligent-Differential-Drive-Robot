@@ -35,8 +35,8 @@ class DifferentialDriveRobot:
 
         # --- Controller Gains (These are the values you will tune!) ---
         
-        self.Kp_linear = 6  # Proportional gain for linear velocity
-        self.Kp_angular = 10    # Proportional gain for angular velocity
+        self.Kp_linear = 0.5  # Proportional gain for linear velocity
+        self.Kp_angular =  1    # Proportional gain for angular velocity
 
         self.Ki_angular = 0.0  # Integral gain for angular velocity
 
@@ -66,9 +66,7 @@ class DifferentialDriveRobot:
         """
         # ---!!!--- ROBUST dt ---!!!---
         dt = max(min(dt, 0.1), 0.001) 
-        # MAX_V = 100.0       # <--- MODIFIED: Safety limit removed
-        # MAX_OMEGA = 3.0     # <--- MODIFIED: Safety limit removed
-
+        
         # 1. Calculate Error Terms
         dx = target_x - self.x
         dy = target_y - self.y
@@ -82,34 +80,34 @@ class DifferentialDriveRobot:
         omega = 0.0
 
         # 2. Check stopping condition BEFORE calculating velocities
-        if rho > 1.0: 
+        #if rho > 1.0: 
             # --- Apply Control Laws ---
-            if controller_type == 'P':
-                v = self.Kp_linear * rho
-                omega = self.Kp_angular * alpha
+        if controller_type == 'P':
+            v = self.Kp_linear * rho
+            omega = self.Kp_angular * alpha
 
-            elif controller_type == 'PD':
-                rho_derivative = (rho - self.prev_rho_error) / dt
-                v = self.Kp_linear * rho + self.Kd_linear * rho_derivative
-                omega = self.Kp_angular * alpha
+        elif controller_type == 'PD':
+            rho_derivative = (rho - self.prev_rho_error) / dt
+            v = self.Kp_linear * rho + self.Kd_linear * rho_derivative
+            omega = self.Kp_angular * alpha
 
-            elif controller_type == 'PI':
-                v = self.Kp_linear * rho
-                self.integral_alpha += alpha * dt
-                self.integral_alpha = max(min(self.integral_alpha, 2.0), -2.0)
-                omega = (self.Kp_angular * alpha + self.Ki_angular * self.integral_alpha)
+        elif controller_type == 'PI':
+            v = self.Kp_linear * rho
+            self.integral_alpha += alpha * dt
+            self.integral_alpha = max(min(self.integral_alpha, 2.0), -2.0)
+            omega = (self.Kp_angular * alpha + self.Ki_angular * self.integral_alpha)
 
-            elif controller_type == 'PID':
-                rho_derivative = (rho - self.prev_rho_error) / dt
-                v = self.Kp_linear * rho + self.Kd_linear * rho_derivative
-                self.integral_alpha += alpha * dt
-                self.integral_alpha = max(min(self.integral_alpha, 2.0), -2.0)
-                alpha_derivative = (alpha - self.prev_alpha_error) / dt
-                omega = (self.Kp_angular * alpha + 
-                         self.Ki_angular * self.integral_alpha + 
-                         self.Kd_angular * alpha_derivative)
-        else:
-            self.integral_alpha = 0.0
+        elif controller_type == 'PID':
+            rho_derivative = (rho - self.prev_rho_error) / dt
+            v = self.Kp_linear * rho + self.Kd_linear * rho_derivative
+            self.integral_alpha += alpha * dt
+            self.integral_alpha = max(min(self.integral_alpha, 2.0), -2.0)
+            alpha_derivative = (alpha - self.prev_alpha_error) / dt
+            omega = (self.Kp_angular * alpha + 
+            self.Ki_angular * self.integral_alpha + 
+            self.Kd_angular * alpha_derivative)
+        #else:
+        self.integral_alpha = 0.0
 
         # v = max(min(v, MAX_V), -MAX_V)                   # <--- MODIFIED: Safety limit removed
         # omega = max(min(omega, MAX_OMEGA), -MAX_OMEGA)   # <--- MODIFIED: Safety limit removed
@@ -126,25 +124,34 @@ class DifferentialDriveRobot:
         return rho
 
     def draw(self, screen):
-        pygame.draw.circle(screen, BLUE, (int(self.x), int(self.y)), self.r)
+        # Convert cartesian coordinates to pygame screen coordinates for drawing
+        screen_y = SCREEN_HEIGHT - self.y
+        pygame.draw.circle(screen, BLUE, (int(self.x), int(screen_y)), self.r)
         end_x = self.x + self.r * math.cos(self.theta)
         end_y = self.y + self.r * math.sin(self.theta)
-        pygame.draw.line(screen, WHITE, (int(self.x), int(self.y)), (int(end_x), int(end_y)), 2)
+        screen_end_y = SCREEN_HEIGHT - end_y
+        pygame.draw.line(screen, WHITE, (int(self.x), int(screen_y)), (int(end_x), int(screen_end_y)), 2)
 
 def draw_cartesian_plane(screen, font, grid_spacing=50):
     grid_color = (80, 80, 80)
+    # Draw vertical grid lines and x-axis labels
     for x in range(0, SCREEN_WIDTH, grid_spacing):
         pygame.draw.line(screen, grid_color, (x, 0), (x, SCREEN_HEIGHT))
         if x > 0:
             label = font.render(str(x), True, WHITE)
-            screen.blit(label, (x + 5, 5))
+            screen.blit(label, (x + 5, SCREEN_HEIGHT - 25))
+
+    # Draw horizontal grid lines and y-axis labels
     for y in range(0, SCREEN_HEIGHT, grid_spacing):
         pygame.draw.line(screen, grid_color, (0, y), (SCREEN_WIDTH, y))
-        if y > 0:
-            label = font.render(str(y), True, WHITE)
-            screen.blit(label, (5, y + 5))
-    pygame.draw.line(screen, WHITE, (0, 0), (SCREEN_WIDTH, 0), 2)
-    pygame.draw.line(screen, WHITE, (0, 0), (0, SCREEN_HEIGHT), 2)
+        cartesian_y = SCREEN_HEIGHT - y
+        if cartesian_y > 0:
+            label = font.render(str(cartesian_y), True, WHITE)
+            screen.blit(label, (5, y - 20))
+
+    # Draw main axes (Y-axis on left, X-axis on bottom)
+    pygame.draw.line(screen, WHITE, (0, SCREEN_HEIGHT - 1), (SCREEN_WIDTH, SCREEN_HEIGHT - 1), 2) # X-axis
+    pygame.draw.line(screen, WHITE, (0, 0), (0, SCREEN_HEIGHT), 2) # Y-axis
 
 # --- Main Simulation Loop ---
 def main():
@@ -156,8 +163,9 @@ def main():
     timer_font = pygame.font.SysFont(None, 36)
 
     # --- Initial State ---
-    initial_robot_pos = (200, 450, -math.pi / 2)
-    initial_target_pos = (550, 350)
+    # Positions are now in a cartesian coordinate system (y-up, origin at bottom-left)
+    initial_robot_pos = (200, 150, 0)
+    initial_target_pos = (500, 300)
 
     robot = DifferentialDriveRobot(*initial_robot_pos)
     target_x, target_y = initial_target_pos
@@ -166,7 +174,7 @@ def main():
 
     # --- Controller Setup ---
     controllers = ['P', 'PI', 'PD', 'PID']
-    controller_index = controllers.index('PID')
+    controller_index = controllers.index('P')
     active_controller = controllers[controller_index]
 
     running = True
@@ -196,7 +204,9 @@ def main():
                     start_time = time.time()
                     time_to_target = None
             elif event.type == pygame.MOUSEBUTTONDOWN:
+                # Convert mouse screen coordinates to cartesian coordinates
                 target_x, target_y = event.pos
+                target_y = SCREEN_HEIGHT - target_y
                 robot.integral_alpha = 0.0
                 trajectory = []
                 start_time = time.time()
@@ -212,7 +222,7 @@ def main():
         if rho > 1.0:
             trajectory.append((robot.x, robot.y))
 
-        if rho <= 5.0 and time_to_target is None:
+        if rho <= 0.01 and time_to_target is None:
             time_to_target = current_time - start_time
 
         # --- Drawing ---
@@ -220,9 +230,12 @@ def main():
         draw_cartesian_plane(screen, info_font)
 
         if len(trajectory) > 1:
-            pygame.draw.lines(screen, GREEN, False, trajectory, 1)
+            # Convert trajectory from cartesian to screen coordinates for drawing
+            screen_trajectory = [(x, SCREEN_HEIGHT - y) for x, y in trajectory]
+            pygame.draw.lines(screen, GREEN, False, screen_trajectory, 1)
 
-        pygame.draw.circle(screen, RED, (target_x, target_y), 10)
+        # Convert target from cartesian to screen coordinates for drawing
+        pygame.draw.circle(screen, RED, (int(target_x), int(SCREEN_HEIGHT - target_y)), 10)
         robot.draw(screen)
 
         # --- UI Info Display ---
