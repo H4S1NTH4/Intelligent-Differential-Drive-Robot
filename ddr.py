@@ -35,13 +35,13 @@ class DifferentialDriveRobot:
 
         # --- Controller Gains (These are the values you will tune!) ---
         
-        self.Kp_linear = 0.5  # Proportional gain for linear velocity
-        self.Kp_angular =  1    # Proportional gain for angular velocity
+        self.Kp_linear = 0.6  # Proportional gain for linear velocity
+        self.Kp_angular = 0.6    # Proportional gain for angular velocity
 
-        self.Ki_angular = 0.0  # Integral gain for angular velocity
+        self.Ki_angular = 0.02  # Integral gain for angular velocity
 
-        self.Kd_linear = 0     # Derivative gain for linear velocity
-        self.Kd_angular = 0    # Derivative gain for angular velocity
+        self.Kd_linear = 0.1     # Derivative gain for linear velocity
+        self.Kd_angular = 8    # Derivative gain for angular velocity
         
         # --- Variables for control and display ---
         self.prev_rho_error = 0.0
@@ -106,7 +106,7 @@ class DifferentialDriveRobot:
             omega = (self.Kp_angular * alpha + 
             self.Ki_angular * self.integral_alpha + 
             self.Kd_angular * alpha_derivative)
-        #else:
+
         self.integral_alpha = 0.0
 
         # v = max(min(v, MAX_V), -MAX_V)                   # <--- MODIFIED: Safety limit removed
@@ -126,7 +126,7 @@ class DifferentialDriveRobot:
     def draw(self, screen):
         # Convert cartesian coordinates to pygame screen coordinates for drawing
         screen_y = SCREEN_HEIGHT - self.y
-        pygame.draw.circle(screen, BLUE, (int(self.x), int(screen_y)), self.r)
+        pygame.draw.circle(screen, GREEN, (int(self.x), int(screen_y)), self.r,2)
         end_x = self.x + self.r * math.cos(self.theta)
         end_y = self.y + self.r * math.sin(self.theta)
         screen_end_y = SCREEN_HEIGHT - end_y
@@ -164,8 +164,8 @@ def main():
 
     # --- Initial State ---
     # Positions are now in a cartesian coordinate system (y-up, origin at bottom-left)
-    initial_robot_pos = (200, 150, 0)
-    initial_target_pos = (500, 300)
+    initial_robot_pos = (200, 250, 0)
+    initial_target_pos = (800, 400)
 
     robot = DifferentialDriveRobot(*initial_robot_pos)
     target_x, target_y = initial_target_pos
@@ -251,11 +251,13 @@ def main():
         controller_text = f"Controller: {active_controller}"
         rho_text = f"Distance (rho): {rho:.2f} px"
         alpha_text = f"Angle (alpha): {math.degrees(robot.alpha):.2f} deg"
-        
+        robot_angle_text = f"Robot Angle: {math.degrees(robot.theta):.2f} deg"
+
         info_surfaces = [
             info_font.render(controller_text, True, WHITE),
             info_font.render(rho_text, True, WHITE),
-            info_font.render(alpha_text, True, WHITE)
+            info_font.render(alpha_text, True, WHITE),
+            info_font.render(robot_angle_text, True, WHITE)
         ]
         for i, surface in enumerate(info_surfaces):
             screen.blit(surface, (50, 100 + i * 25))
